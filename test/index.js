@@ -1,0 +1,62 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var tape = require("tape");
+var src_1 = require("../src");
+tape('SMT', function (t) {
+    var tree = new src_1.SMT();
+    var k = Buffer.from('0000000000000000000000000000000000000000000000000000000000000002', 'hex');
+    var k2 = Buffer.from('0000000000000000000000000000000000000000000000000000000000000004', 'hex');
+    var k3 = Buffer.from('00000000000000000000000000000000000000000000ff000000000000000000', 'hex');
+    var leaf2 = Buffer.from('ff', 'hex');
+    var leaf3 = Buffer.from('aa', 'hex');
+    tree.put(k2, leaf2);
+    tree.put(k3, leaf3);
+    t.deepEqual(tree.get(k), undefined);
+    t.deepEqual(tree.get(k2), leaf2);
+    t.deepEqual(tree.get(k3), leaf3);
+    // Remove leaf at k2
+    tree.put(k2);
+    t.deepEqual(tree.get(k2), undefined);
+    t.end();
+});
+tape('Proof generation/verification', function (t) {
+    var tree = new src_1.SMT();
+    var k = Buffer.from('0000000000000000000000000000000000000000000000000000000000000002', 'hex');
+    var k2 = Buffer.from('0000000000000000000000000000000000000000000000000000000000000004', 'hex');
+    var k3 = Buffer.from('00000000000000000000000000000000000000000000ff000000000000000000', 'hex');
+    var leaf2 = Buffer.from('ff', 'hex');
+    var leaf3 = Buffer.from('aa', 'hex');
+    tree.put(k2, leaf2);
+    tree.put(k3, leaf3);
+    var proof2 = tree.prove(k2);
+    var proof3 = tree.prove(k3);
+    var nonmembershipProof = tree.prove(k);
+    var newTree = new src_1.SMT();
+    t.true(newTree.verifyProof(proof2, tree.root, k2, leaf2));
+    t.true(newTree.verifyProof(proof3, tree.root, k3, leaf3));
+    t.true(newTree.verifyProof(nonmembershipProof, tree.root, k));
+    t.end();
+});
+tape('Compact proof generation/verification', function (t) {
+    var tree = new src_1.SMT();
+    var k = Buffer.from('0000000000000000000000000000000000000000000000000000000000000002', 'hex');
+    var k2 = Buffer.from('0000000000000000000000000000000000000000000000000000000000000004', 'hex');
+    var k3 = Buffer.from('00000000000000000000000000000000000000000000ff000000000000000000', 'hex');
+    var leaf2 = Buffer.from('ff', 'hex');
+    var leaf3 = Buffer.from('aa', 'hex');
+    tree.put(k2, leaf2);
+    tree.put(k3, leaf3);
+    var proof2 = tree.prove(k2);
+    var proof3 = tree.prove(k3);
+    t.equals(proof2.length, 256);
+    var cproof2 = tree.compressProof(proof2);
+    var cproof3 = tree.compressProof(proof3);
+    var nonmembershipProof = tree.prove(k);
+    var cnmp = tree.compressProof(nonmembershipProof);
+    var newTree = new src_1.SMT();
+    t.true(newTree.verifyCompactProof(cproof2, tree.root, k2, leaf2));
+    t.true(newTree.verifyCompactProof(cproof3, tree.root, k3, leaf3));
+    t.true(newTree.verifyCompactProof(cnmp, tree.root, k));
+    t.end();
+});
+//# sourceMappingURL=index.js.map
